@@ -1,0 +1,6 @@
+.DS_Store
+images/canva-raw/
+*.log
+.env
+.idea/
+.vscode/
