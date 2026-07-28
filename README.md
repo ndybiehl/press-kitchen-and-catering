@@ -36,15 +36,37 @@ Quote form posts via [FormSubmit](https://formsubmit.co) → `press.catering406@
 
 **First live submit** must be confirmed from that inbox (FormSubmit activation email).
 
-## Deploy options
+## Deploy (DigitalOcean App Platform)
 
-Any static host works:
+Spec: [`.do/app.yaml`](.do/app.yaml)
 
-1. **GitHub Pages** — Settings → Pages → deploy from `main` / root  
-2. **DigitalOcean App Platform** — Static Site, output dir `/`  
-3. **Cloudflare Pages** — connect this repo  
+### UI (recommended)
 
-Point `presskitchenandcatering.com` DNS at the new host when ready (currently Cloudflare → Canva).
+1. [cloud.digitalocean.com](https://cloud.digitalocean.com) → **Apps** → **Create App**
+2. **GitHub** → authorize if needed → repo **`ndybiehl/press-kitchen-and-catering`**, branch **`main`**
+3. Resource type: **Static Site** (not Web Service / Node)
+4. Source directory: `/` · Build command: *(leave empty)* · Output directory: `/` (or blank)
+5. Plan: **Basic** static is fine · region **NYC** (or closest)
+6. **Create Resources** → wait for deploy → open the `*.ondigitalocean.app` URL
+7. Later: **Settings → Domains** → add `presskitchenandcatering.com` (+ `www` if you want)  
+   Point DNS at DO only when ready to leave Canva.
+
+### CLI
+
+```bash
+doctl apps create --spec .do/app.yaml
+# or update an existing app:
+# doctl apps update <app-id> --spec .do/app.yaml
+```
+
+Push to `main` redeploys automatically (`deploy_on_push: true`).
+
+### Other hosts
+
+- **GitHub Pages** — already enabled: https://ndybiehl.github.io/press-kitchen-and-catering/
+- **Cloudflare Pages** — connect the same repo, root output
+
+Domain is still on Canva until DNS cutover.
 
 ## Content notes
 

@@ -1,0 +1,21 @@
+# DigitalOcean App Platform — Static Site
+# Create from DO UI (App Platform → Create → GitHub) or:
+#   doctl apps create --spec .do/app.yaml
+#
+# After deploy: Settings → Domains → add presskitchenandcatering.com
+# (DNS still points at Canva until you cut over.)
+name: press-kitchen-and-catering
+region: nyc
+static_sites:
+  - name: web
+    github:
+      repo: ndybiehl/press-kitchen-and-catering
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    # Entire repo is the site root (index.html at top level)
+    output_dir: /
+    index_document: index.html
+    error_document: index.html
+    routes:
+      - path: /
