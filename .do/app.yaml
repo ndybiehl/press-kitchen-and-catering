@@ -1,21 +1,41 @@
-# DigitalOcean App Platform — Static Site
-# Create from DO UI (App Platform → Create → GitHub) or:
-#   doctl apps create --spec .do/app.yaml
+# DigitalOcean App Platform — Node web service (site + schedule admin)
+# doctl apps create --spec .do/app.yaml
 #
-# After deploy: Settings → Domains → add presskitchenandcatering.com
-# (DNS still points at Canva until you cut over.)
+# After create, set secrets in the DO dashboard:
+#   SESSION_SECRET          long random string
+#   ADMIN_PASSWORD_HASH     from: npm run hash-password -- 'MuriahPassword'
+# Optional:
+#   ADMIN_EMAIL             default press.catering406@gmail.com
+#   PUBLIC_SITE_URL         https://presskitchenandcatering.com
+#
+# Note: stop data is stored on the app filesystem (data/locations.json).
+# Use a Basic droplet-like persistent instance or accept that redeploys
+# may reset empty data — for durable storage later, move to Spaces/DB.
+# With deploy_on_push, the committed data/locations.json is the seed;
+# runtime writes persist until the container is replaced.
 name: press-kitchen-and-catering
 region: nyc
-static_sites:
+services:
   - name: web
     github:
       repo: ndybiehl/press-kitchen-and-catering
       branch: main
       deploy_on_push: true
     source_dir: /
-    # Entire repo is the site root (index.html at top level)
-    output_dir: /
-    index_document: index.html
-    error_document: index.html
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 3000
     routes:
       - path: /
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: PUBLIC_SITE_URL
+        value: https://presskitchenandcatering.com
+      - key: ADMIN_EMAIL
+        value: press.catering406@gmail.com
+      # Secrets in DO dashboard (do not commit real values):
+      # SESSION_SECRET, ADMIN_PASSWORD_HASH
+    health_check:
+      http_path: /healthz

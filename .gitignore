@@ -4,3 +4,6 @@ images/canva-raw/
 .env
 .idea/
 .vscode/
+node_modules/
+data/locations.json.tmp
+data/*.tmp

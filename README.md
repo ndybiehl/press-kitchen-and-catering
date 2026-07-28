@@ -1,34 +1,53 @@
 # Press Kitchen & Catering
 
-Public marketing site for **[Press Kitchen & Catering](https://presskitchenandcatering.com)** — Billings, Montana.
+Public marketing site + **food truck / trailer schedule admin** for **[Press Kitchen & Catering](https://presskitchenandcatering.com)** — Billings, Montana.
 
 | | |
 |---|---|
 | **Business** | Press Kitchen & Catering |
 | **Email** | [press.catering406@gmail.com](mailto:press.catering406@gmail.com) |
 | **Location** | Billings, MT |
-| **Stack** | Plain HTML / CSS / minimal JS (zero build step) |
-| **Source content** | Migrated from Canva-hosted site |
+| **Stack** | Node (Express) + static HTML/CSS |
+| **Public schedule** | `/#find-us` · API `GET /api/locations` |
+| **Admin (Muriah)** | `/admin` — calendar + address/GPS for truck stops |
+| **Hosting** | DigitalOcean App Platform (Node web service) |
 
-## Local preview
+## Local development
 
 ```bash
 cd press-kitchen-and-catering
-python3 -m http.server 8080
-# open http://localhost:8080/
+npm install
+# optional: ADMIN_PASSWORD=secret npm run dev
+npm run dev
+# Site:   http://localhost:3000/
+# Admin:  http://localhost:3000/admin
 ```
 
-Or open `index.html` directly in a browser.
+Default first-boot password (only if no hash/env password):
 
-## What’s in the repo
+`ChangeMe-Press2026!`
 
-- `index.html` — single-page site (hero, about, menus, gallery, catering, contact form)
-- `css/styles.css` — brand styles (charcoal / cream / gold)
-- `images/` — optimized web assets (logo, food, catering, menus)
-- `video/hero.mp4` — optional Canva hero clip (not currently used in the page)
-- `robots.txt`, `sitemap.xml` — basic SEO
+**Set a real password before Muriah uses production.**
 
-Large raw Canva exports live under `images/canva-raw/` locally and are **gitignored**.
+```bash
+npm run hash-password -- 'her-secure-password'
+# put the hash in ADMIN_PASSWORD_HASH (DO app env secret)
+```
+
+Admin email default: `press.catering406@gmail.com` (override with `ADMIN_EMAIL`).
+
+## Schedule feature (Muriah)
+
+1. Open **`/admin`** and sign in.
+2. Click a day on the calendar (or enter a date).
+3. Add:
+   - **Title** (e.g. “Library plaza”)
+   - **Street address** and/or **lat/lng**
+   - Optional: paste a **Google Maps link** (GPS is extracted when possible)
+   - Start/end times, notes, published toggle
+4. Save — published stops show on the homepage under **Where we’ll be**, with Google/Apple Maps directions.
+
+Data file: `data/locations.json` (created automatically).
 
 ## Contact form
 
@@ -38,42 +57,47 @@ Quote form posts via [FormSubmit](https://formsubmit.co) → `press.catering406@
 
 ## Deploy (DigitalOcean App Platform)
 
+**Important:** this is a **Web Service (Node)**, not a Static Site — needed for `/admin` and the schedule API.
+
 Spec: [`.do/app.yaml`](.do/app.yaml)
 
-### UI (recommended)
+### UI
 
 1. [cloud.digitalocean.com](https://cloud.digitalocean.com) → **Apps** → **Create App**
-2. **GitHub** → authorize if needed → repo **`ndybiehl/press-kitchen-and-catering`**, branch **`main`**
-3. Resource type: **Static Site** (not Web Service / Node)
-4. Source directory: `/` · Build command: *(leave empty)* · Output directory: `/` (or blank)
-5. Plan: **Basic** static is fine · region **NYC** (or closest)
-6. **Create Resources** → wait for deploy → open the `*.ondigitalocean.app` URL
-7. Later: **Settings → Domains** → add `presskitchenandcatering.com` (+ `www` if you want)  
-   Point DNS at DO only when ready to leave Canva.
+2. **GitHub** → **`ndybiehl/press-kitchen-and-catering`**, branch **`main`**
+3. Resource type: **Web Service**
+4. Build: `npm install` (default) · Run: `npm start` · HTTP port: **`3000`**
+5. Health check: `/healthz`
+6. App-level env secrets:
+   - `SESSION_SECRET` — long random string  
+   - `ADMIN_PASSWORD_HASH` — from `npm run hash-password`  
+   - `ADMIN_EMAIL=press.catering406@gmail.com` (or Muriah’s preferred login email)  
+   - `NODE_ENV=production`  
+   - `PUBLIC_SITE_URL=https://presskitchenandcatering.com`
+7. Create → open `*.ondigitalocean.app` → test `/admin` and `/#find-us`
+8. Domains later when leaving Canva
 
 ### CLI
 
 ```bash
 doctl apps create --spec .do/app.yaml
-# or update an existing app:
-# doctl apps update <app-id> --spec .do/app.yaml
 ```
 
-Push to `main` redeploys automatically (`deploy_on_push: true`).
+### Storage note
 
-### Other hosts
+Stops are saved in `data/locations.json` on the running instance. Redeploys can replace the filesystem; for production durability you can:
 
-- **GitHub Pages** — already enabled: https://ndybiehl.github.io/press-kitchen-and-catering/
-- **Cloudflare Pages** — connect the same repo, root output
+- Re-enter a few stops after rare redeploys, or  
+- Later move storage to DO Spaces / a small DB  
 
-Domain is still on Canva until DNS cutover.
+Committed `data/locations.json` is the seed (starts empty).
 
 ## Content notes
 
 - Chef / owners: James Schendel & Muriah  
 - Tagline: *Flat out delicious* · *Press · Smash · Crave · Repeat*  
-- Menus embedded as images (main, breakfast, tidbits, kids) scraped from the Canva site  
+- Menus embedded as images (main, breakfast, tidbits, kids)
 
 ## License / ownership
 
-Site content and photography belong to Press Kitchen & Catering. Repo is for development and deployment of their marketing site.
+Site content and photography belong to Press Kitchen & Catering.

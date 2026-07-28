@@ -99,6 +99,7 @@
       <nav class="nav" aria-label="Primary">
         <a href="#about">About</a>
         <a href="#menu">Menu</a>
+        <a href="#find-us">Find us</a>
         <a href="#food">Eats</a>
         <a href="#catering">Catering</a>
         <a href="#contact">Contact</a>
@@ -111,6 +112,7 @@
       <nav class="nav-mobile" id="mobile-nav" aria-label="Mobile">
         <a href="#about">About</a>
         <a href="#menu">Menu</a>
+        <a href="#find-us">Find us</a>
         <a href="#food">Eats</a>
         <a href="#catering">Catering</a>
         <a href="#contact">Contact</a>
@@ -131,8 +133,8 @@
         <p class="tagline">Flat out delicious.</p>
         <p class="tagline-sub">Gourmet eats &amp; neighborhood treats — pressed sandwiches, smash burgers, breakfast, and full-service catering from Chef James Schendel.</p>
         <div class="hero-actions">
-          <a class="btn btn-gold" href="#menu">View the menu</a>
-          <a class="btn btn-outline" href="#contact">Free catering quote</a>
+          <a class="btn btn-gold" href="#find-us">Where we’ll be</a>
+          <a class="btn btn-outline" href="#menu">View the menu</a>
         </div>
         <div class="hero-meta">
           <span><strong>Press · Smash · Crave · Repeat</strong></span>
@@ -215,6 +217,35 @@
           </div>
         </div>
         <p class="menu-note">All sandwiches &amp; burgers come with your choice of side and house sauce. Menus and pricing subject to change — ask us for the latest when you order or book catering.</p>
+      </div>
+    </section>
+
+    <section id="find-us" class="band-slate" aria-labelledby="find-us-heading">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Food truck &amp; trailer</p>
+          <h2 id="find-us-heading">Where we’ll be</h2>
+          <p>Upcoming Press stops around Billings. Tap directions to open maps on your phone.</p>
+        </div>
+
+        <div class="schedule-layout">
+          <div>
+            <div class="schedule-month-nav">
+              <button type="button" class="btn btn-outline btn-sm" id="pub-prev-month" aria-label="Previous month">←</button>
+              <h3 id="pub-month-label">Schedule</h3>
+              <button type="button" class="btn btn-outline btn-sm" id="pub-next-month" aria-label="Next month">→</button>
+            </div>
+            <div class="pub-cal-dows" id="pub-cal-dows" aria-hidden="true"></div>
+            <div class="pub-cal-days" id="pub-cal-days" role="grid" aria-label="Stop calendar"></div>
+            <p class="schedule-footnote" id="schedule-updated"></p>
+          </div>
+          <div>
+            <h3 class="schedule-list-title" id="pub-day-title">Upcoming stops</h3>
+            <div class="schedule-list" id="schedule-list">
+              <p class="schedule-empty">Loading schedule…</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -427,6 +458,238 @@
           status.textContent = 'Thanks! Your catering request was sent. We’ll get back to you soon.';
         }
       }
+
+      /* ---------- Public schedule ---------- */
+      var sched = {
+        stops: [],
+        viewYear: null,
+        viewMonth: null,
+        selectedDate: null,
+        today: null,
+      };
+
+      function pad(n) { return String(n).padStart(2, '0'); }
+      function todayISO() {
+        var d = new Date();
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      }
+      function fmtDate(iso) {
+        if (!iso) return '';
+        var p = iso.split('-').map(Number);
+        return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, {
+          weekday: 'short', month: 'short', day: 'numeric'
+        });
+      }
+      function fmtDateLong(iso) {
+        if (!iso) return '';
+        var p = iso.split('-').map(Number);
+        return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, {
+          weekday: 'long', month: 'long', day: 'numeric'
+        });
+      }
+      function fmtTime(t) {
+        if (!t) return '';
+        var parts = t.split(':').map(Number);
+        var h = parts[0], min = parts[1];
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        var h12 = ((h + 11) % 12) + 1;
+        return h12 + ':' + pad(min) + ' ' + ampm;
+      }
+      function timeRange(s) {
+        if (s.startTime && s.endTime) return fmtTime(s.startTime) + ' – ' + fmtTime(s.endTime);
+        if (s.startTime) return 'From ' + fmtTime(s.startTime);
+        return '';
+      }
+      function esc(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+      function mapsHref(s) {
+        if (s.lat != null && s.lng != null && !isNaN(s.lat) && !isNaN(s.lng)) {
+          return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(s.lat + ',' + s.lng);
+        }
+        if (s.address) {
+          return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(s.address);
+        }
+        return null;
+      }
+      function appleMapsHref(s) {
+        if (s.lat != null && s.lng != null) {
+          return 'https://maps.apple.com/?daddr=' + encodeURIComponent(s.lat + ',' + s.lng);
+        }
+        if (s.address) {
+          return 'https://maps.apple.com/?daddr=' + encodeURIComponent(s.address);
+        }
+        return null;
+      }
+
+      function stopCard(s) {
+        var g = mapsHref(s);
+        var a = appleMapsHref(s);
+        var place = s.address ? esc(s.address) : (s.lat != null ? esc(s.lat + ', ' + s.lng) : 'Location TBA');
+        var when = fmtDate(s.date) + (timeRange(s) ? ' · ' + timeRange(s) : '');
+        var btns = '';
+        if (g) btns += '<a class="btn btn-gold btn-sm" href="' + g + '" target="_blank" rel="noopener">Directions</a>';
+        if (a) btns += '<a class="btn btn-outline btn-sm" href="' + a + '" target="_blank" rel="noopener">Apple Maps</a>';
+        return (
+          '<article class="stop-card">' +
+            '<div class="stop-when">' + esc(when) + '</div>' +
+            '<h4>' + esc(s.title || 'Press stop') + '</h4>' +
+            '<p class="stop-place">' + place + '</p>' +
+            (s.notes ? '<p class="stop-notes">' + esc(s.notes) + '</p>' : '') +
+            (btns ? '<div class="stop-actions">' + btns + '</div>' : '') +
+          '</article>'
+        );
+      }
+
+      function stopsOn(iso) {
+        return sched.stops.filter(function (s) { return s.date === iso; });
+      }
+
+      function renderPubList() {
+        var listEl = document.getElementById('schedule-list');
+        var titleEl = document.getElementById('pub-day-title');
+        if (!listEl) return;
+
+        var list;
+        if (sched.selectedDate) {
+          list = stopsOn(sched.selectedDate);
+          titleEl.textContent = list.length
+            ? fmtDateLong(sched.selectedDate)
+            : fmtDateLong(sched.selectedDate) + ' — no stops';
+          if (!list.length) {
+            listEl.innerHTML = '<p class="schedule-empty">No Press stop published for this day. Check another date or see upcoming below.</p>';
+            var upcoming = sched.stops.filter(function (s) { return s.date >= (sched.today || todayISO()); }).slice(0, 12);
+            if (upcoming.length) {
+              listEl.innerHTML += '<p class="schedule-subhead">Upcoming</p>' + upcoming.map(stopCard).join('');
+            }
+            return;
+          }
+          listEl.innerHTML = list.map(stopCard).join('');
+          return;
+        }
+
+        titleEl.textContent = 'Upcoming stops';
+        list = sched.stops.filter(function (s) { return s.date >= (sched.today || todayISO()); }).slice(0, 20);
+        if (!list.length) {
+          listEl.innerHTML = '<p class="schedule-empty">No upcoming food truck or trailer stops posted yet. Check back soon — or <a href="#contact">ask us</a> where we’ll be.</p>';
+          return;
+        }
+        listEl.innerHTML = list.map(stopCard).join('');
+      }
+
+      function renderPubCal() {
+        var y = sched.viewYear;
+        var m = sched.viewMonth;
+        var label = document.getElementById('pub-month-label');
+        var daysEl = document.getElementById('pub-cal-days');
+        var dowsEl = document.getElementById('pub-cal-dows');
+        if (!label || !daysEl) return;
+
+        label.textContent = new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        var dows = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+        dowsEl.innerHTML = dows.map(function (d) { return '<div class="pub-cal-dow">' + d + '</div>'; }).join('');
+
+        var first = new Date(y, m, 1);
+        var startPad = first.getDay();
+        var daysInMonth = new Date(y, m + 1, 0).getDate();
+        var prevDays = new Date(y, m, 0).getDate();
+        var today = sched.today || todayISO();
+        var cells = [];
+        var i, day, iso, pm, py, nm, ny;
+
+        for (i = 0; i < startPad; i++) {
+          day = prevDays - startPad + i + 1;
+          pm = m === 0 ? 11 : m - 1;
+          py = m === 0 ? y - 1 : y;
+          iso = py + '-' + pad(pm + 1) + '-' + pad(day);
+          cells.push({ iso: iso, day: day, muted: true });
+        }
+        for (day = 1; day <= daysInMonth; day++) {
+          iso = y + '-' + pad(m + 1) + '-' + pad(day);
+          cells.push({ iso: iso, day: day, muted: false });
+        }
+        while (cells.length % 7 !== 0) {
+          day = cells.length - (startPad + daysInMonth) + 1;
+          nm = m === 11 ? 0 : m + 1;
+          ny = m === 11 ? y + 1 : y;
+          iso = ny + '-' + pad(nm + 1) + '-' + pad(day);
+          cells.push({ iso: iso, day: day, muted: true });
+        }
+
+        daysEl.innerHTML = cells.map(function (c) {
+          var n = stopsOn(c.iso).length;
+          var cls = ['pub-cal-day'];
+          if (c.muted) cls.push('muted');
+          if (c.iso === today) cls.push('today');
+          if (c.iso === sched.selectedDate) cls.push('selected');
+          if (n) cls.push('has-stop');
+          return (
+            '<button type="button" class="' + cls.join(' ') + '" data-date="' + c.iso + '" aria-label="' + c.iso + (n ? ', ' + n + ' stop(s)' : '') + '">' +
+              '<span class="n">' + c.day + '</span>' +
+              (n ? '<span class="pip" aria-hidden="true"></span>' : '') +
+            '</button>'
+          );
+        }).join('');
+
+        daysEl.querySelectorAll('[data-date]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            sched.selectedDate = btn.getAttribute('data-date');
+            renderPubCal();
+            renderPubList();
+          });
+        });
+      }
+
+      function loadSchedule() {
+        fetch('/api/locations')
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            sched.stops = data.stops || [];
+            sched.today = data.today || todayISO();
+            var t = sched.today.split('-').map(Number);
+            if (sched.viewYear == null) {
+              sched.viewYear = t[0];
+              sched.viewMonth = t[1] - 1;
+            }
+            var updated = document.getElementById('schedule-updated');
+            if (updated && data.updatedAt) {
+              updated.textContent = 'Schedule updated ' + new Date(data.updatedAt).toLocaleString();
+            } else if (updated) {
+              updated.textContent = 'Gold dots mark days with a Press stop.';
+            }
+            renderPubCal();
+            renderPubList();
+          })
+          .catch(function () {
+            var listEl = document.getElementById('schedule-list');
+            if (listEl) {
+              listEl.innerHTML = '<p class="schedule-empty">Schedule is temporarily unavailable. Email <a href="mailto:press.catering406@gmail.com">press.catering406@gmail.com</a> for today’s location.</p>';
+            }
+          });
+      }
+
+      var prev = document.getElementById('pub-prev-month');
+      var next = document.getElementById('pub-next-month');
+      if (prev) {
+        prev.addEventListener('click', function () {
+          if (sched.viewMonth === 0) { sched.viewMonth = 11; sched.viewYear--; }
+          else sched.viewMonth--;
+          renderPubCal();
+        });
+      }
+      if (next) {
+        next.addEventListener('click', function () {
+          if (sched.viewMonth === 11) { sched.viewMonth = 0; sched.viewYear++; }
+          else sched.viewMonth++;
+          renderPubCal();
+        });
+      }
+
+      loadSchedule();
     })();
   </script>
 </body>

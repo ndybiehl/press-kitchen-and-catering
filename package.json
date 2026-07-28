@@ -1,0 +1,21 @@
+{
+  "name": "press-kitchen-and-catering",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Press Kitchen & Catering — public site + food truck schedule admin",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "hash-password": "node server/hash-password.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1"
+  }
+}
