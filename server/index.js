@@ -1,7 +1,7 @@
 /**
  * Press Kitchen & Catering
- * - Serves public static site from project root
- * - Public schedule: GET /api/locations
+ * - Public site: EXACT Canva export mirror (canva-mirror/)
+ * - Public schedule API: GET /api/locations (for later enhancements)
  * - Owner admin at /admin (food truck / trailer stops)
  *
  * Env:
@@ -25,6 +25,7 @@ const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const ROOT = path.join(__dirname, "..");
+const PUBLIC = path.join(ROOT, "canva-mirror");
 const DATA_FILE = path.join(ROOT, "data", "locations.json");
 
 const ADMIN_EMAIL = (
@@ -312,36 +313,32 @@ app.get("/admin", requireAdmin, (_req, res) => {
   res.type("html").send(adminPage());
 });
 
-// Do not expose server source, data store, or package metadata
-app.use((req, res, next) => {
-  const p = req.path.toLowerCase();
-  if (
-    p.startsWith("/server") ||
-    p.startsWith("/data") ||
-    p.startsWith("/node_modules") ||
-    p.startsWith("/.do") ||
-    p === "/package.json" ||
-    p === "/package-lock.json" ||
-    p.endsWith(".tmp")
-  ) {
-    return res.status(404).type("text").send("Not found");
-  }
-  next();
-});
+// Exact Canva-exported site (pixel/layout match to presskitchenandcatering.com)
+app.use(
+  express.static(PUBLIC, {
+    index: "index.html",
+    // Canva assets are content-hashed; cache hard
+    setHeaders(res, filePath) {
+      if (filePath.includes(`${path.sep}_assets${path.sep}`)) {
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      }
+    },
+  }),
+);
 
-// Static site (after API / admin routes)
-app.use(express.static(ROOT, { index: "index.html", extensions: ["html"] }));
-
+// SPA-style fallback: unknown non-file routes → Canva index
 app.use((req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ error: "Not found" });
   }
-  res.status(404).type("html").send(`<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><title>Not found</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{font-family:system-ui;background:#0d0d0d;color:#f6f1e8;display:grid;place-items:center;min-height:100vh;margin:0}
-a{color:#e2b84a}</style></head>
-<body><div><h1>Not found</h1><p><a href="/">Back to Press</a></p></div></body></html>`);
+  if (req.path.startsWith("/admin")) {
+    return res.redirect("/admin/login");
+  }
+  const indexFile = path.join(PUBLIC, "index.html");
+  if (fs.existsSync(indexFile)) {
+    return res.sendFile(indexFile);
+  }
+  res.status(404).type("text").send("Site mirror missing (canva-mirror/)");
 });
 
 app.listen(PORT, () => {

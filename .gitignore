@@ -7,3 +7,8 @@ images/canva-raw/
 node_modules/
 data/locations.json.tmp
 data/*.tmp
+
+# Local-only archives / scrapes (not the public site)
+archive-custom-rebuild/
+images/canva-raw/
+canva-mirror/asset-list.txt

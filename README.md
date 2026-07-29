@@ -1,114 +1,75 @@
 # Press Kitchen & Catering
 
-Public marketing site + **food truck / trailer schedule admin** for **[Press Kitchen & Catering](https://presskitchenandcatering.com)** — Billings, Montana.
+**Self-hosted copy of Muriah’s exact Canva website**, plus optional schedule admin.
 
 | | |
 |---|---|
-| **Business** | Press Kitchen & Catering |
-| **Email** | [press.catering406@gmail.com](mailto:press.catering406@gmail.com) |
-| **Location** | Billings, MT |
-| **Stack** | Node (Express) + static HTML/CSS |
-| **Public schedule** | `/#find-us` · API `GET /api/locations` |
-| **Admin (Muriah)** | `/admin` — calendar + address/GPS for truck stops |
-| **Hosting** | DigitalOcean App Platform (Node web service) |
+| **Live Canva (until cutover)** | https://presskitchenandcatering.com/ |
+| **Source of public UI** | `canva-mirror/` — full export of her Canva site (HTML + `_assets/`) |
+| **Email** | press.catering406@gmail.com |
+| **Admin (truck schedule)** | `/admin` |
+| **Stack** | Node (Express) serves the Canva mirror + admin API |
 
-## Local development
+This is **not a redesign**. The homepage is the same Canva-built experience, files pulled from the live site so hosting can leave Canva without changing how it looks.
+
+## Local preview
 
 ```bash
 cd press-kitchen-and-catering
 npm install
-# optional: ADMIN_PASSWORD=secret npm run dev
 npm run dev
-# Site:   http://localhost:3000/
-# Admin:  http://localhost:3000/admin
+# Exact Canva site: http://localhost:3000/
+# Schedule admin:   http://localhost:3000/admin
 ```
 
-Default first-boot password (only if no hash/env password):
+Default admin password (until you set `ADMIN_PASSWORD_HASH`):
 
 `ChangeMe-Press2026!`
 
-**Set a real password before Muriah uses production.**
-
 ```bash
 npm run hash-password -- 'her-secure-password'
-# put the hash in ADMIN_PASSWORD_HASH (DO app env secret)
 ```
 
-Admin email default: `press.catering406@gmail.com` (override with `ADMIN_EMAIL`).
+## Refresh the Canva mirror
 
-## Schedule feature (Muriah)
-
-1. Open **`/admin`** and sign in.
-2. Click a day on the calendar (or enter a date).
-3. Add:
-   - **Title** (e.g. “Library plaza”)
-   - **Street address** and/or **lat/lng**
-   - Optional: paste a **Google Maps link** (GPS is extracted when possible)
-   - Start/end times, notes, published toggle
-4. Save — published stops show on the homepage under **Where we’ll be**, with Google/Apple Maps directions.
-
-Data file: `data/locations.json` (created automatically).
-
-## Contact form
-
-Quote form posts via [FormSubmit](https://formsubmit.co) → `press.catering406@gmail.com`.
-
-**First live submit** must be confirmed from that inbox (FormSubmit activation email).
-
-## Deploy (DigitalOcean App Platform)
-
-**Important:** this is a **Web Service (Node)**, not a Static Site — needed for `/admin` and the schedule API.
-
-Spec: [`.do/app.yaml`](.do/app.yaml)
-
-### UI
-
-1. [cloud.digitalocean.com](https://cloud.digitalocean.com) → **Apps** → **Create App**
-2. **GitHub** → **`ndybiehl/press-kitchen-and-catering`**, branch **`main`**
-3. Resource type: **Web Service**
-4. Build: `npm install` (default) · Run: `npm start` · HTTP port: **`3000`**
-5. Health check: `/healthz`
-6. App-level env secrets:
-   - `SESSION_SECRET` — long random string  
-   - `ADMIN_PASSWORD_HASH` — from `npm run hash-password`  
-   - `ADMIN_EMAIL=press.catering406@gmail.com` (or Muriah’s preferred login email)  
-   - `NODE_ENV=production`  
-   - `PUBLIC_SITE_URL=https://presskitchenandcatering.com`
-7. Create → open `*.ondigitalocean.app` → test `/admin` and `/#find-us`
-8. Domains later when leaving Canva
-
-### CLI
+If Muriah updates the Canva design:
 
 ```bash
-doctl apps create --spec .do/app.yaml
+python3 scripts/refresh-canva-mirror.py
+git add canva-mirror
+git commit -m "Refresh Canva mirror from live site"
+git push
 ```
 
-### Storage note
+## Project layout
 
-Stops are saved in `data/locations.json` on the running instance. Redeploys can replace the filesystem; for production durability you can:
+```
+canva-mirror/           ← PUBLIC SITE (exact Canva export)
+  index.html
+  _assets/…             media, fonts, JS, CSS, video
+server/                 admin + API + static server
+data/locations.json     truck/trailer stops (admin)
+archive-custom-rebuild/ earlier custom HTML attempt (not served)
+scripts/refresh-canva-mirror.py
+```
 
-- Re-enter a few stops after rare redeploys, or  
-- Later move storage to DO Spaces / a small DB  
+## Deploy (DigitalOcean — Web Service)
 
-Committed `data/locations.json` is the seed (starts empty).
+Must be **Node Web Service** (not Static Site) if you want `/admin`.
 
-## Design notes
+1. Repo `ndybiehl/press-kitchen-and-catering` · branch `main`
+2. Run `npm start` · port `3000` · health `/healthz`
+3. Secrets: `SESSION_SECRET`, `ADMIN_PASSWORD_HASH`, `ADMIN_EMAIL`, `NODE_ENV=production`
 
-This site is a **faithful recreation of Muriah’s Canva design**, not a rebrand:
+Spec: `.do/app.yaml`
 
-- Black canvas, white display type, yellow accent energy  
-- Her PRESS logo, menu boards, food photography, picnic / catering photos  
-- Her copy (About, catering, *Flat out delicious*, *Press • Smash • Crave • Repeat*, *Follow The Flavor*)  
-- Roman numeral mark **I · IX · MMXXV**  
+For **looks-only** hosting you could also point any static host at `canva-mirror/` alone (no admin).
 
-We only added practical pieces Canva can’t do well: **food truck schedule admin**, quote form, and hostable HTML.
+## Schedule admin (later polish)
 
-## Content notes
-
-- Chef / owners: James Schendel & Muriah  
-- Tagline: *Flat out delicious* · *Press · Smash · Crave · Repeat*  
-- Menus embedded as **her designed boards** (main, breakfast, tidbits, kids)
+`/admin` lets Muriah add truck/trailer dates, address, and GPS.  
+Public API: `GET /api/locations` — not shown on the Canva homepage yet (we can wire a section once the exact site is live and approved).
 
 ## License / ownership
 
-Site content and photography belong to Press Kitchen & Catering.
+Design, photography, and copy belong to Press Kitchen & Catering (Muriah / James).
