@@ -25,8 +25,8 @@ const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const ROOT = path.join(__dirname, "..");
-// Exact public scrape of her live site (no Canva login required)
-const PUBLIC = path.join(ROOT, "canva-mirror");
+// Self-hosted site (her Canva components as our HTML/CSS/images)
+const PUBLIC = path.join(ROOT, "public");
 const DATA_FILE = path.join(ROOT, "data", "locations.json");
 
 const ADMIN_EMAIL = (

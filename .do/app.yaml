@@ -1,5 +1,4 @@
-# DigitalOcean App Platform — Static Site (exact Canva mirror)
-# The DO UI created a Static Site; it needs output_dir = public (after build).
+# DigitalOcean Static Site — self-hosted Press site (public/)
 name: press-kitchen-and-catering
 region: sfo
 static_sites:

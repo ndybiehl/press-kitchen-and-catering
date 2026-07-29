@@ -8,7 +8,7 @@
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "hash-password": "node server/hash-password.js",
-    "build": "rm -rf public && mkdir -p public && cp -R canva-mirror/. public/"
+    "build": "test -f public/index.html && echo \"public ready\" || (echo \"missing public/\" && exit 1)"
   },
   "engines": {
     "node": ">=18"
