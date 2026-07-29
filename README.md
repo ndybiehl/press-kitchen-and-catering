@@ -92,11 +92,22 @@ Stops are saved in `data/locations.json` on the running instance. Redeploys can 
 
 Committed `data/locations.json` is the seed (starts empty).
 
+## Design notes
+
+This site is a **faithful recreation of Muriah’s Canva design**, not a rebrand:
+
+- Black canvas, white display type, yellow accent energy  
+- Her PRESS logo, menu boards, food photography, picnic / catering photos  
+- Her copy (About, catering, *Flat out delicious*, *Press • Smash • Crave • Repeat*, *Follow The Flavor*)  
+- Roman numeral mark **I · IX · MMXXV**  
+
+We only added practical pieces Canva can’t do well: **food truck schedule admin**, quote form, and hostable HTML.
+
 ## Content notes
 
 - Chef / owners: James Schendel & Muriah  
 - Tagline: *Flat out delicious* · *Press · Smash · Crave · Repeat*  
-- Menus embedded as images (main, breakfast, tidbits, kids)
+- Menus embedded as **her designed boards** (main, breakfast, tidbits, kids)
 
 ## License / ownership
 
