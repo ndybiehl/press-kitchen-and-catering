@@ -2,12 +2,13 @@
   "name": "press-kitchen-and-catering",
   "version": "1.0.0",
   "private": true,
-  "description": "Press Kitchen & Catering — public site + food truck schedule admin",
+  "description": "Press Kitchen & Catering \u2014 public site + food truck schedule admin",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "hash-password": "node server/hash-password.js"
+    "hash-password": "node server/hash-password.js",
+    "build": "rm -rf public && mkdir -p public && cp -R canva-mirror/. public/"
   },
   "engines": {
     "node": ">=18"

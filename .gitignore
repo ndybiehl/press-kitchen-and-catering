@@ -12,3 +12,4 @@ data/*.tmp
 archive-custom-rebuild/
 images/canva-raw/
 canva-mirror/asset-list.txt
+public/

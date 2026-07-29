@@ -1,41 +1,17 @@
-# DigitalOcean App Platform — Node web service (site + schedule admin)
-# doctl apps create --spec .do/app.yaml
-#
-# After create, set secrets in the DO dashboard:
-#   SESSION_SECRET          long random string
-#   ADMIN_PASSWORD_HASH     from: npm run hash-password -- 'MuriahPassword'
-# Optional:
-#   ADMIN_EMAIL             default press.catering406@gmail.com
-#   PUBLIC_SITE_URL         https://presskitchenandcatering.com
-#
-# Note: stop data is stored on the app filesystem (data/locations.json).
-# Use a Basic droplet-like persistent instance or accept that redeploys
-# may reset empty data — for durable storage later, move to Spaces/DB.
-# With deploy_on_push, the committed data/locations.json is the seed;
-# runtime writes persist until the container is replaced.
+# DigitalOcean App Platform — Static Site (exact Canva mirror)
+# The DO UI created a Static Site; it needs output_dir = public (after build).
 name: press-kitchen-and-catering
-region: nyc
-services:
+region: sfo
+static_sites:
   - name: web
     github:
       repo: ndybiehl/press-kitchen-and-catering
       branch: main
       deploy_on_push: true
     source_dir: /
-    environment_slug: node-js
-    instance_count: 1
-    instance_size_slug: basic-xxs
-    http_port: 3000
+    build_command: npm run build
+    output_dir: public
+    index_document: index.html
+    error_document: index.html
     routes:
       - path: /
-    envs:
-      - key: NODE_ENV
-        value: production
-      - key: PUBLIC_SITE_URL
-        value: https://presskitchenandcatering.com
-      - key: ADMIN_EMAIL
-        value: press.catering406@gmail.com
-      # Secrets in DO dashboard (do not commit real values):
-      # SESSION_SECRET, ADMIN_PASSWORD_HASH
-    health_check:
-      http_path: /healthz
