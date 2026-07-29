@@ -25,6 +25,7 @@ const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const ROOT = path.join(__dirname, "..");
+// Exact public scrape of her live site (no Canva login required)
 const PUBLIC = path.join(ROOT, "canva-mirror");
 const DATA_FILE = path.join(ROOT, "data", "locations.json");
 
@@ -313,11 +314,31 @@ app.get("/admin", requireAdmin, (_req, res) => {
   res.type("html").send(adminPage());
 });
 
-// Exact Canva-exported site (pixel/layout match to presskitchenandcatering.com)
+// Never expose server source, data, deps, or archives via static
+app.use((req, res, next) => {
+  const p = req.path.toLowerCase();
+  if (
+    p.startsWith("/server") ||
+    p.startsWith("/data") ||
+    p.startsWith("/node_modules") ||
+    p.startsWith("/archive") ||
+    p.startsWith("/scripts") ||
+    p.startsWith("/canva-mirror") ||
+    p.startsWith("/.git") ||
+    p.startsWith("/.do") ||
+    p === "/package.json" ||
+    p === "/package-lock.json" ||
+    p === "/readme.md"
+  ) {
+    return res.status(404).type("text").send("Not found");
+  }
+  next();
+});
+
+// Exact Canva-exported site (index.html + _assets/ at repo root)
 app.use(
   express.static(PUBLIC, {
     index: "index.html",
-    // Canva assets are content-hashed; cache hard
     setHeaders(res, filePath) {
       if (filePath.includes(`${path.sep}_assets${path.sep}`)) {
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
@@ -338,7 +359,7 @@ app.use((req, res) => {
   if (fs.existsSync(indexFile)) {
     return res.sendFile(indexFile);
   }
-  res.status(404).type("text").send("Site mirror missing (canva-mirror/)");
+  res.status(404).type("text").send("Site missing: index.html + _assets/");
 });
 
 app.listen(PORT, () => {
